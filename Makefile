@@ -11,7 +11,7 @@ deploy:
 
 # Show the proxy's recent logs on the server
 logs:
-	ssh "$$(sed -n 's/^VPS_TARGET=//p' .env)" "cd droplet-proxy && docker compose logs --tail 50"
+	ssh "$$(sed -n 's/^VPS_TARGET=//p' .env)" "cd caddy-front && docker compose logs --tail 50"
 
 # Turn trailing CLI arguments passed to deploy into dummy rules
 ifneq ($(filter deploy,$(firstword $(MAKECMDGOALS))),)

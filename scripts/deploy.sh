@@ -5,7 +5,7 @@ set -euo pipefail
 # Script: deploy.sh
 # Purpose: Deploy the shared proxy to the droplet (run from your Mac): copies
 #          docker-compose.yml, pulls the image and starts/updates the proxy.
-#          The server's ~/droplet-proxy/.env must contain DEFAULT_SNI.
+#          The server's ~/caddy-front/.env must contain DEFAULT_SNI.
 # Usage:
 #   ./scripts/deploy.sh [USER@HOST] [REMOTE_DIR]
 #   (USER@HOST defaults to VPS_TARGET in .env)
@@ -14,7 +14,7 @@ set -euo pipefail
 PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 # Only the VPS_TARGET line is read
 REMOTE_TARGET="${1:-$(sed -n 's/^VPS_TARGET=//p' "$PROJECT_ROOT/.env" 2>/dev/null || true)}"
-REMOTE_DIR="${2:-droplet-proxy}"
+REMOTE_DIR="${2:-caddy-front}"
 
 if [ -z "$REMOTE_TARGET" ]; then
   echo "❌ Error: Missing remote VPS SSH target (argument or VPS_TARGET in .env)."

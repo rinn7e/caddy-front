@@ -1,4 +1,4 @@
-# 🚪 droplet-proxy
+# 🚪 caddy-front
 
 A shared HTTPS front door for running **several Docker Compose projects on one small server** (a DigitalOcean
 droplet, Hetzner, any Linux VPS), each in its own repo, without tangling their setups.
@@ -8,7 +8,7 @@ every TLS certificate. Each project registers itself with **labels** on its own 
 when a project is added or removed.
 
 ```
-internet ──443──▶ droplet-proxy (Caddy, automatic HTTPS for every site)
+internet ──443──▶ caddy-front (Caddy, automatic HTTPS for every site)
                     │  docker network "proxy"   (the only thing projects share)
                     ├──▶ app1.example.com        → project-1 web:80
                     └──▶ app2.example.com, <ip>  → project-2 app:3000
@@ -43,7 +43,7 @@ On your computer, in this repo:
 
 ```bash
 cp .env.example .env                       # set VPS_TARGET=root@<server-ip>
-ssh root@<server-ip> "mkdir -p droplet-proxy && echo DEFAULT_SNI=<server-ip> > droplet-proxy/.env"
+ssh root@<server-ip> "mkdir -p caddy-front && echo DEFAULT_SNI=<server-ip> > caddy-front/.env"
 make deploy                                 # copies docker-compose.yml, pulls, starts, waits until healthy
 make logs                                   # recent proxy logs
 ```
@@ -80,11 +80,11 @@ Rules for projects:
 
 - **Pinned image.** It's the `ci-alpine` tag, pinned by digest, because it bundles Caddy 2.11.4, the first version that can get IP-address certificates (the `2.12-alpine` release still has 2.11.3). Switch to a release tag once one ships Caddy ≥ 2.11.4.
 - **Never delete the `caddy_data` volume.** Re-issuing certificates is rate-limited, to 5 per week for the same IP or name set.
-- **Debugging.** See the generated Caddyfile with `docker exec droplet-proxy-caddy-1 cat /config/caddy/Caddyfile.autosave`.
+- **Debugging.** See the generated Caddyfile with `docker exec caddy-front-caddy-1 cat /config/caddy/Caddyfile.autosave`.
 - **Moving an existing Caddy setup here.** Copy its data volume into this one before the first start, so certificates aren't re-issued:
   ```bash
-  docker volume create droplet-proxy_caddy_data
-  docker run --rm -v <old>_caddy_data:/from -v droplet-proxy_caddy_data:/to alpine cp -a /from/. /to/
+  docker volume create caddy-front_caddy_data
+  docker run --rm -v <old>_caddy_data:/from -v caddy-front_caddy_data:/to alpine cp -a /from/. /to/
   ```
 
 ## License
