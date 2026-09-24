@@ -1,0 +1,46 @@
+# Shared front door for every project on the server.
+# The only container that publishes a public port. Projects register themselves with labels
+# on their own containers (see README.md); this file never changes when a project is added.
+services:
+  caddy:
+    # caddy-docker-proxy builds its Caddyfile from container labels.
+    # ci-alpine pinned by digest: it bundles Caddy 2.11.4, the first version that can get
+    # Let's Encrypt IP-address certificates (the 2.12-alpine release still has 2.11.3).
+    image: lucaslorentz/caddy-docker-proxy:ci-alpine@sha256:534d570f4da28c2b1a5ea438a8a777323a7575072c46e55998eae619ead7b2c2
+    restart: unless-stopped
+    environment:
+      # Only route to containers on this network
+      CADDY_INGRESS_NETWORKS: proxy
+    # HTTPS only: nothing listens on port 80
+    ports:
+      - "443:443"
+      - "443:443/udp"
+    networks:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Certificates for every site (never delete: IP certificates are rate-limited to 5/week)
+      - caddy_data:/data
+      - caddy_config:/config
+    labels:
+      # Global options (labels without a site address)
+      # No port-80 HTTP -> HTTPS redirect listener
+      caddy.auto_https: disable_redirects
+      # Let's Encrypt only issues IP-address certificates under its 6-day "shortlived"
+      # profile (Caddy renews them automatically). Port 80 is closed, so certificates
+      # are validated over 443 (TLS-ALPN) only.
+      caddy.cert_issuer: acme
+      caddy.cert_issuer.profile: shortlived
+      caddy.cert_issuer.disable_http_challenge: ""
+      # Browsers send no SNI when connecting to an IP, and behind Docker's port
+      # forwarding Caddy can't see the public IP, so tell it which cert to use
+      caddy.default_sni: ${DEFAULT_SNI:?DEFAULT_SNI must be set in .env}
+
+networks:
+  # Projects join this network with `networks: proxy: external: true`
+  proxy:
+    name: proxy
+
+volumes:
+  caddy_data:
+  caddy_config:
